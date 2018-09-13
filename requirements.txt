@@ -1,1 +1,6 @@
+delorean
+gspread
+humanize
+oauth2client
 python-dotenv
+PyOpenSSL
