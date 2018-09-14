@@ -1,14 +1,23 @@
+import calendar
 import os
 from pprint import pprint
 from textwrap import dedent
 
 import gspread
 
-from delorean import Delorean
+from delorean import Delorean, parse
 from dotenv import load_dotenv
 from oauth2client.service_account import ServiceAccountCredentials
 
 HYMN_SPREADSHEET = "Centreville First Ward Sacrament Hymns"
+
+
+def parse_num(hymn_cell):
+    return hymn_cell.split()[0]
+
+
+def parse_hymn(hymn_cell):
+    return hymn_cell[hymn_cell.find(' ') + 1:]
 
 
 def main():
@@ -28,41 +37,55 @@ def main():
     # for cell in cell_list:
     #     print('cell: ', type(cell), cell)
 
-    cell_list = sacrament_hymn_sheet.get_all_values()
-    d = Delorean()
-    d.next_sunday()
-    d.truncate('day')
-    # pprint(cell_list)
-    print(cell_list[28])
+    all_rows = sacrament_hymn_sheet.get_all_values()
+    next_sunday = Delorean().next_sunday().truncate('day')
+    row_info = None
+    # pprint(all_rows)
+    for row in all_rows:
+        date = row[0]
 
-    # date = sacrament_meeting.col_values(2)
-    # pprint(date)
+        # skip header row
+        if 'Date' in date:
+            continue
 
-    month = None
-    day = None
-    opening_num = None
-    opening_hymn = None
+        row_date = parse(date)
+        if next_sunday != row_date:
+            continue
 
-    sacrament_num = None
-    sacrament_hymn = None
+        # print(f'Next Sunday: {next_sunday} ?==? row date: {row_date}')
+        print(row)
+        row_info = row
 
-    intermediate_num = None
-    intermediate_hymn = None
+    month = calendar.month_name[next_sunday.date.month]
+    day = next_sunday.date.day
+    # opening_num = parse_num(row_info[2])
+    # opening_hymn = parse_hymn(row_info[2])
+    # sacrament_num = parse_num(row_info[3])
+    # sacrament_hymn = parse_hymn(row_info[3])
+    # intermediate_num = parse_num(row_info[4])
+    # intermediate_hymn = parse_hymn(row_info[4])
+    # closing_num = parse_num(row_info[5])
+    # closing_hymn = parse_hymn(row_info[5])
 
-    closing_num = None
-    closing_hymn = None
+    opening_hymn = row_info[2]
+    sacrament_hymn = row_info[3]
+    intermediate_hymn = row_info[4]
+    closing_hymn = row_info[5]
+    signature = os.getenv("SIGNATURE")
 
-    msg = dedent(f"""Here are the hymns for {month} {day}.
+    msg = dedent(f"""\
+    Here are the hymns for {month} {day}.
 
-                     Opening: {opening_num} {opening_hymn}
-                     Sacrament: {sacrament_num} {sacrament_hymn}
-                     Intermediate: {intermediate_num} {intermediate_hymn}
-                     Closing: {closing_num} {closing_hymn}
+    Opening: {opening_hymn}
+    Sacrament: {sacrament_hymn}
+    Intermediate: {intermediate_hymn}
+    Closing: {closing_hymn}
 
-                     Let me know if you have any questions or would like to make any changes/suggestions. Thanks!
+    Let me know if you have any questions or would like to make any changes/suggestions. Thanks!
 
-                     Brother Ondricek
-                     """)
+    {signature}
+    """)
+    print(msg)
 
 
 if __name__ == "__main__":
