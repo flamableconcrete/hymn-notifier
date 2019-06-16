@@ -1,6 +1,5 @@
 delorean
-gspread
 humanize
-oauth2client
+pygsheets
 python-dotenv
 PyOpenSSL
